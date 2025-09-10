@@ -117,13 +117,13 @@ async def delete_previous_messages(message: Message, state: FSMContext):
     await state.update_data(messages_to_delete=messages_to_delete)
 
 
-def setup_admin_handlers(dp: Dispatcher, admin_id: int):
+def setup_admin_handlers(dp: Dispatcher, admin_ids: tuple):
     """Настройка обработчиков админ-панели"""
 
     @dp.callback_query(lambda c: c.data == "admin_add_class")
     async def admin_add_class_start(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
-        if callback.from_user.id != admin_id:
+        if callback.from_user.id not in admin_ids:
             await callback.message.edit_text("❌ У тебя нет доступа к этой функции.")
             return
 
@@ -213,7 +213,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.message(AdminAddClass.time)
     async def admin_add_class_time(message: Message, state: FSMContext):
         user_id = message.from_user.id
-        if user_id != admin_id:
+        if user_id not in admin_ids:
             return
 
         # Удаляем предыдущие сообщения и само сообщение пользователя
@@ -248,7 +248,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.message(AdminAddClass.capacity)
     async def admin_add_class_capacity(message: Message, state: FSMContext):
         user_id = message.from_user.id
-        if user_id != admin_id:
+        if user_id not in admin_ids:
             return
 
         # Удаляем предыдущие сообщения и само сообщение пользователя
@@ -283,7 +283,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.message(AdminAddClass.class_type)
     async def admin_add_class_type(message: Message, state: FSMContext):
         user_id = message.from_user.id
-        if user_id != admin_id:
+        if user_id not in admin_ids:
             return
 
         class_type = message.text
@@ -300,7 +300,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
             await state.clear()
             return
 
-        # Преобразуем дату из формата отображения в формат хранения
+        # Преобразуем дату из формат отображения в формат хранения
         display_date = data.get('display_date')
         class_date = format_date_storage(display_date)
 
@@ -318,7 +318,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.callback_query(lambda c: c.data == "admin_view_classes")
     async def admin_view_classes(callback: CallbackQuery):
         await callback.answer()
-        if callback.from_user.id != admin_id:
+        if callback.from_user.id not in admin_ids:
             await callback.message.edit_text("❌ У тебя нет доступа к этой функции.")
             return
 
@@ -339,7 +339,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.callback_query(lambda c: c.data == "admin_view_bookings")
     async def admin_view_bookings(callback: CallbackQuery):
         await callback.answer()
-        if callback.from_user.id != admin_id:
+        if callback.from_user.id not in admin_ids:
             await callback.message.edit_text("❌ У тебя нет доступа к этой функции.")
             return
 
@@ -379,7 +379,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.callback_query(lambda c: c.data.startswith("view_booking_details:"))
     async def admin_view_booking_details(callback: CallbackQuery):
         await callback.answer()
-        if callback.from_user.id != admin_id:
+        if callback.from_user.id not in admin_ids:
             await callback.message.edit_text("❌ У тебя нет доступа к этой функции.")
             return
 
@@ -432,7 +432,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.callback_query(lambda c: c.data == "admin_remove_class")
     async def admin_remove_class(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
-        if callback.from_user.id != admin_id:
+        if callback.from_user.id not in admin_ids:
             await callback.message.edit_text("❌ У тебя нет доступа к этой функции.")
             return
 
@@ -463,7 +463,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.callback_query(AdminRemoveClass.select_class)
     async def admin_remove_class_select(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
-        if callback.from_user.id != admin_id:
+        if callback.from_user.id not in admin_ids:
             await callback.message.edit_text("❌ У тебя нет доступа.")
             await state.clear()
             return
@@ -517,7 +517,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.callback_query(AdminRemoveClass.confirm_notification)
     async def admin_confirm_notification(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
-        if callback.from_user.id != admin_id:
+        if callback.from_user.id not in admin_ids:
             await callback.message.edit_text("❌ У тебя нет доступа.")
             await state.clear()
             return
@@ -564,7 +564,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.message(AdminRemoveClass.notification_text)
     async def admin_send_notification(message: Message, state: FSMContext):
         user_id = message.from_user.id
-        if user_id != admin_id:
+        if user_id not in admin_ids:
             await state.clear()
             return
 
@@ -604,7 +604,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
 
         # Формируем отчет об отправке
         report_text = (
-            f"✅ Занятие {display_date} {class_time} ({class_type}) удалено вместе с записями.\n\n"
+            f"✅ Занятие {display_date} {class_time} ({class_type}) удалено вместе с записи.\n\n"
             f"📊 Статус отправки уведомлений:\n"
             f"✅ Успешно: {success_count}\n"
             f"❌ Не удалось: {fail_count}"
@@ -616,7 +616,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.callback_query(lambda c: c.data == "admin_edit_content")
     async def admin_edit_content(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
-        if callback.from_user.id != admin_id:
+        if callback.from_user.id not in admin_ids:
             await callback.message.edit_text("❌ У тебя нет доступа к этой функции.")
             return
 
@@ -635,7 +635,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.callback_query(EditContent.select_type)
     async def admin_edit_content_select(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
-        if callback.from_user.id != admin_id:
+        if callback.from_user.id not in admin_ids:
             await callback.message.edit_text("❌ У тебя нет доступа.")
             await state.clear()
             return
@@ -677,7 +677,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.message(EditContent.edit_text)
     async def admin_edit_content_save(message: Message, state: FSMContext):
         user_id = message.from_user.id
-        if user_id != admin_id:
+        if user_id not in admin_ids:
             await state.clear()
             return
 
@@ -717,7 +717,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.callback_query(EditContent.add_photo)
     async def admin_edit_content_photo_choice(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
-        if callback.from_user.id != admin_id:
+        if callback.from_user.id not in admin_ids:
             await state.clear()
             return
 
@@ -760,7 +760,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.message(EditContent.add_photo)
     async def admin_edit_content_photo_save(message: Message, state: FSMContext):
         user_id = message.from_user.id
-        if user_id != admin_id:
+        if user_id not in admin_ids:
             await state.clear()
             return
 
@@ -833,7 +833,7 @@ def setup_admin_handlers(dp: Dispatcher, admin_id: int):
     @dp.callback_query(lambda c: c.data == "admin_back")
     async def admin_back(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
-        if callback.from_user.id != admin_id:
+        if callback.from_user.id not in admin_ids:
             return
 
         await callback.message.edit_text("Админ-панель:", reply_markup=admin_menu())
