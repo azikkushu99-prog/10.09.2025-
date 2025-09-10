@@ -8,20 +8,18 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.client.default import DefaultBotProperties
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.context import FSMContext
 
 # Импортируем админ-модуль
 from admin_panel import setup_admin_handlers, admin_menu
 
-API_TOKEN = "8016284193:AAHMKRib2jFRzfMakic4RwMQg3ppfZxaHLc"
-ADMIN_ID = 785219206
+API_TOKEN = "8302199284:AAHLD2P9hZZ9swbIgVE9qqlqbILz-417hZ8"
+ADMIN_ID = (785219206, 891991569)  # Кортеж с двумя ID администраторов
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 dp = Dispatcher(storage=MemoryStorage())
 
-# Настраиваем админ-обработчики
+# Настраиваем админ-обработчики с передачей кортежа ADMIN_ID
 setup_admin_handlers(dp, ADMIN_ID)
 
 # Создаем папки для фото если их нет
@@ -103,7 +101,7 @@ def format_date_display(db_date):
 
 
 def format_date_storage(display_date):
-    """Преобразует дату из формата отображения (DD.MM.YYYY) в формат БД (YYYY-MM-DD)"""
+    """Преобразует дату из формат отображения (DD.MM.YYYY) в формат БД (YYYY-MM-DD)"""
     try:
         if display_date:
             date_obj = datetime.strptime(display_date, "%d.%m.%Y")
@@ -113,13 +111,14 @@ def format_date_storage(display_date):
         return display_date
 
 
-# Функция для отправки уведомлений администратору
+# Функция для отправки уведомлений администраторам
 async def notify_admin(message_text):
-    """Отправляет уведомление администратору"""
-    try:
-        await bot.send_message(ADMIN_ID, message_text)
-    except Exception as e:
-        logging.error(f"Ошибка отправки уведомления админу: {e}")
+    """Отправляет уведомление всем администраторам"""
+    for admin_id in ADMIN_ID:
+        try:
+            await bot.send_message(admin_id, message_text)
+        except Exception as e:
+            logging.error(f"Ошибка отправки уведомления админу {admin_id}: {e}")
 
 
 # Функция для удаления предыдущего сообщения пользователя
@@ -313,7 +312,7 @@ async def admin_panel_cmd(message: Message):
         await message.delete()
     except Exception:
         pass
-    if message.from_user.id != ADMIN_ID:
+    if message.from_user.id not in ADMIN_ID:
         await send_or_edit_single(message.from_user.id, message.chat.id, "❌ У тебя нет доступа к админ-панели.", None)
         return
     await send_or_edit_single(message.from_user.id, message.chat.id, "Админ-панель:", admin_menu())
@@ -445,7 +444,7 @@ async def handle_menu(callback: CallbackQuery):
         )
         conn.commit()
 
-        # Отправляем уведомление администратору о новой записи
+        # Отправляем уведомление администраторам о новой записи
         admin_message = (
             f"✅ Новая запись на занятие:\n"
             f"👤 Пользователь: @{callback.from_user.username or 'нет username'} (ID: {user_id})\n"
@@ -488,7 +487,7 @@ async def handle_menu(callback: CallbackQuery):
             cursor.execute("DELETE FROM bookings WHERE id=?", (booking_id,))
             conn.commit()
 
-            # Отправляем уведомление администратору об отмене
+            # Отправляем уведомление администраторам об отмене
             admin_message = (
                 f"❌ Отмена записи на занятие:\n"
                 f"👤 Пользователь: @{username or 'нет username'} (ID: {user_id})\n"
